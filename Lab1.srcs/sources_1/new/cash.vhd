@@ -85,20 +85,32 @@ architecture cash_arch of cash is
             wr      : in    std_logic
         );
     end component;
-    component fakeRAM
+    component ramIf
         generic (
             A_WIDTH : integer;
-            D_WIDTH : integer
+            D_WIDTH : integer;
+            RAM_D_WIDTH : integer --can't be changed
         );
         port (
             clk     : in    std_logic;
             reset_n : in    std_logic;
             addr    : in    std_logic_vector(A_WIDTH - 1 downto 0);
             wdata   : in    std_logic_vector(D_WIDTH - 1 downto 0);
-            rdata   : out   std_logic_vector(D_WIDTH - 1 downto 0);
             wr      : in    std_logic;
             rd      : in    std_logic;
-            ack     : out    std_logic
+            
+            ack     : out   std_logic;
+            rdata   : out   std_logic_vector(D_WIDTH - 1 downto 0);
+            
+            ram_clk     : in   std_logic;
+            ram_reset_n : in   std_logic;
+            ram_ack     : in   std_logic;
+            ram_rdata   : in   std_logic_vector(RAM_D_WIDTH - 1 downto 0);
+            
+            ram_wdata   : out   std_logic_vector(RAM_D_WIDTH - 1 downto 0);
+            ram_addr    : out   std_logic_vector(A_WIDTH - 1 downto 0);
+            ram_avalid  : out   std_logic;
+            ram_rnw     : out   std_logic
         );
     end component;
     --aliases
@@ -135,8 +147,8 @@ architecture cash_arch of cash is
     signal dMem_wData : std_logic_vector(2**ADISP_WIDTH * 8 - 1 downto 0) := (others => '0');
     signal dMem_rData : std_logic_vector(2**ADISP_WIDTH * 8 - 1 downto 0) := (others => '0');
     --ramIf signals
-    signal ram_wData  : std_logic_vector(2**ADISP_WIDTH * 8 - 1 downto 0) := (others => '0');
-    signal ram_rData  : std_logic_vector(2**ADISP_WIDTH * 8 - 1 downto 0) := (others => '0');
+    signal ramIf_wData  : std_logic_vector(2**ADISP_WIDTH * 8 - 1 downto 0) := (others => '0');
+    signal ramIf_rData  : std_logic_vector(2**ADISP_WIDTH * 8 - 1 downto 0) := (others => '0');
 begin
     tagMem_inst: tagMem
         generic map(
@@ -179,20 +191,29 @@ begin
             rdata => dMem_rData,
             wr => dWr
         );
-    fakeRAM_inst: fakeRAM
+    ramIf_inst: ramIf
         generic map(
             A_WIDTH => ATAG_WIDTH + AINDEX_WIDTH,
-            D_WIDTH => 2**ADISP_WIDTH * 8
+            D_WIDTH => 2**ADISP_WIDTH * 8,
+            RAM_D_WIDTH => RAM_D_WIDTH
         )
         port map(
-            clk => clk,
-            reset_n => reset_n,
-            addr => addr_c(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
-            wdata => ram_wData,
-            rdata => ram_rData,
-            wr => ramWr,
-            rd => ramRd,
-            ack => ramAck
+            clk         => clk,
+            reset_n     => reset_n,
+            addr        => addr_c(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
+            wdata       => ramIf_wData,
+            wr          => ramWr,
+            rd          => ramRd,
+            ack         => ramAck,
+            rdata       => ramIf_rData,
+            ram_clk     => ram_clk,
+            ram_reset_n => ram_reset_n,
+            ram_ack     => ram_ack,
+            ram_rdata   => ram_rdata,
+            ram_wdata   => ram_wdata,
+            ram_addr    => ram_addr,
+            ram_avalid  => ram_avalid,
+            ram_rnw     => ram_rnw
         );
     
     -- latches - CPU interface
@@ -252,25 +273,25 @@ begin
         --rounded address to insert to
         wordAddr := conv_integer(addr_c(ADISP_WIDTH - 1 downto integer(ceil(log2(real(2**ADISP_WIDTH * 8 / D_WIDTH - 1)))))) * (2**ADISP_WIDTH * 8 / D_WIDTH) * 8;
         --original data
-        ram_wData <= dMem_rData; --hope it works this way
+        ramIf_wData <= dMem_rData; --hope it works this way
         --compose
         for i in 0 to (2**ADISP_WIDTH * 8 / D_WIDTH - 1) loop
             byteAddr := wordAddr + 8 * i;
             if bval_c(i) = '1' then
-                ram_wData(byteAddr + 7 downto byteAddr) <= wdata_c(8 * i + 7 downto 8 * i);
+                ramIf_wData(byteAddr + 7 downto byteAddr) <= wdata_c(8 * i + 7 downto 8 * i);
             else
-                ram_wData(byteAddr + 7 downto byteAddr) <= dMem_rData(byteAddr + 7 downto byteAddr);
+                ramIf_wData(byteAddr + 7 downto byteAddr) <= dMem_rData(byteAddr + 7 downto byteAddr);
             end if;
         end loop;
     end process CC2;
         
     --CC3 - dataMem input
-    CC3: process (ram_wData, ram_rData, dSel)
+    CC3: process (ramIf_wData, ramIf_rData, dSel)
     begin
         if dSel = '1' then
-            dMem_wData <= ram_rData;
+            dMem_wData <= ramIf_rData;
         else
-            dMem_wData <= ram_wData;
+            dMem_wData <= ramIf_wData;
         end if;
     end process CC3;
 

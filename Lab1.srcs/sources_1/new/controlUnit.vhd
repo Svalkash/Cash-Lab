@@ -21,7 +21,8 @@ entity controlUnit is
 end controlUnit;
 
 architecture controlUnit_arch of controlUnit is
-    type State_Type is (IDLE, RD_HIT, WR_HIT, WR_DONE, RAM_RD);
+    --type State_Type is (IDLE, RD_HIT, WR_HIT, WR_DONE, RAM_RD);
+    type State_Type is (IDLE, RD_HIT, WR_HIT, WR_DONE, RAM_RD, WR_WAIT, RD_WAIT);
     signal state        : State_Type := IDLE;
     signal next_state   : State_Type;
 begin
@@ -44,22 +45,40 @@ begin
                 next_state <= IDLE;
                 
             when WR_HIT =>
+                --if ramAck = '1' then
+                --    next_state <= WR_DONE;
+                --else
+                --    next_state <= WR_HIT;
+                --end if;
+                next_state <= WR_WAIT;
+                
+            when WR_WAIT =>
                 if ramAck = '1' then
                     next_state <= WR_DONE;
                 else
-                    next_state <= WR_HIT;
+                    next_state <= WR_WAIT;
                 end if;
                 
             when WR_DONE =>
                 next_state <= IDLE;
                 
             when RAM_RD =>
+                --if ramAck = '1' and rd = '1' then
+                --    next_state <= RD_HIT;
+                --elsif ramAck = '1' and wr = '1' then
+                --    next_state <= WR_HIT;
+                --else
+                --    next_state <= RAM_RD;
+                --end if;
+                next_state <= RD_WAIT;
+                
+            when RD_WAIT =>
                 if ramAck = '1' and rd = '1' then
                     next_state <= RD_HIT;
                 elsif ramAck = '1' and wr = '1' then
                     next_state <= WR_HIT;
                 else
-                    next_state <= RAM_RD;
+                    next_state <= RD_WAIT;
                 end if;
         end case;
     end process next_state_p;
@@ -91,7 +110,7 @@ begin
                 dWr <= '0';
                 ramWr <= '0';
                 ramRd <= '0';
-                lock <= '1'; --not needed, but why not?
+                lock <= '1';
             when WR_HIT =>
                 ack <= '0';
                 tWr <= '0';
@@ -99,14 +118,22 @@ begin
                 dSel <= '0'; --WData + cash
                 ramWr <= '1';
                 ramRd <= '0';
-                lock <= '1'; --not needed, but why not?
+                lock <= '1';
+            when WR_WAIT =>
+                ack <= '0';
+                tWr <= '0';
+                dWr <= '0';
+                dSel <= '0'; --WData + cash
+                ramWr <= '0';
+                ramRd <= '0';
+                lock <= '1';
             when WR_DONE =>
                 ack <= '1';
                 tWr <= '0';
                 dWr <= '0';
                 ramWr <= '0';
                 ramRd <= '0';
-                lock <= '1'; --not needed, but why not?
+                lock <= '1';
             when RAM_RD =>
                 ack <= '0'; --still not ready!
                 tWr <= '1'; --fix the tag after miss
@@ -114,6 +141,14 @@ begin
                 dSel <= '1'; --RAM
                 ramWr <= '0';
                 ramRd <= '1';
+                lock <= '1';
+            when RD_WAIT =>
+                ack <= '0'; --still not ready!
+                tWr <= '0'; --fix the tag after miss
+                dWr <= '1'; --writing, don't care. Right BEFORE state switching, it'll be written properly?
+                dSel <= '1'; --RAM
+                ramWr <= '0';
+                ramRd <= '0';
                 lock <= '1';
         end case;
     end process controls;

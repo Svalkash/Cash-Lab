@@ -10,7 +10,8 @@ entity top_cash is
         ATAG_WIDTH      : integer := 5;
         AINDEX_WIDTH    : integer := 7;
         ADISP_WIDTH     : integer := 4;
-        D_WIDTH         : integer := 32
+        D_WIDTH         : integer := 32;
+        RAM_D_WIDTH     : integer := 32
     );
 end top_cash;
 
@@ -20,7 +21,8 @@ architecture top_cash_arch of top_cash is
             ATAG_WIDTH      : integer;
             AINDEX_WIDTH    : integer;
             ADISP_WIDTH     : integer;
-            D_WIDTH         : integer
+            D_WIDTH         : integer;
+            RAM_D_WIDTH     : integer
         );
         port (
             clk     : in    std_logic;
@@ -34,9 +36,36 @@ architecture top_cash_arch of top_cash is
             
             bval    : in    std_logic_vector(2**ADISP_WIDTH * 8 / D_WIDTH - 1 downto 0); --128/32 = 4
             wdata   : in    std_logic_vector(D_WIDTH - 1 downto 0);
-            rdata   : out   std_logic_vector(D_WIDTH - 1 downto 0)
+            rdata   : out   std_logic_vector(D_WIDTH - 1 downto 0);
             
-            --add ram if here
+            ram_clk     : in   std_logic;
+            ram_reset_n : in   std_logic;
+            ram_ack     : in   std_logic;
+            ram_rdata   : in   std_logic_vector(RAM_D_WIDTH - 1 downto 0);
+            
+            ram_wdata   : out   std_logic_vector(RAM_D_WIDTH - 1 downto 0);
+            ram_addr    : out   std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH - 1 downto 0);
+            ram_avalid  : out   std_logic;
+            ram_rnw     : out   std_logic
+        );
+    end component;
+    component fakeExtRam
+        generic (
+            A_WIDTH : integer;
+            D_WIDTH : integer;
+            LINE_WIDTH : integer
+        );
+        port (
+            clk     : in   std_logic;
+            reset_n : in   std_logic;
+            
+            wdata   : in   std_logic_vector(D_WIDTH - 1 downto 0);
+            addr    : in   std_logic_vector(A_WIDTH - 1 downto 0);
+            avalid  : in   std_logic;
+            rnw     : in   std_logic;
+            
+            ack     : out  std_logic;
+            rdata   : out  std_logic_vector(D_WIDTH - 1 downto 0)
         );
     end component;
     
@@ -50,25 +79,59 @@ architecture top_cash_arch of top_cash is
     signal rdata    :     std_logic_vector(D_WIDTH - 1 downto 0);
     signal addr     :     std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto 0);
     
+    signal ram_clk     : std_logic := '0';
+    signal ram_reset_n : std_logic := '0';
+    signal ram_ack     : std_logic;
+    signal ram_rdata   : std_logic_vector(RAM_D_WIDTH - 1 downto 0);
+    
+    signal ram_wdata   : std_logic_vector(RAM_D_WIDTH - 1 downto 0);
+    signal ram_addr    : std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH - 1 downto 0);
+    signal ram_avalid  : std_logic;
+    signal ram_rnw     : std_logic;
     
 begin
     cash_inst: cash
         generic map (
-            ATAG_WIDTH => ATAG_WIDTH,
-            AINDEX_WIDTH => AINDEX_WIDTH,
-            ADISP_WIDTH => ADISP_WIDTH,
-            D_WIDTH => D_WIDTH
+            ATAG_WIDTH      => ATAG_WIDTH,
+            AINDEX_WIDTH    => AINDEX_WIDTH,
+            ADISP_WIDTH     => ADISP_WIDTH,
+            D_WIDTH         => D_WIDTH,
+            RAM_D_WIDTH     => RAM_D_WIDTH
         )
         port map(
-            clk => clk,
-            reset_n => reset_n,
-            wr => wr,
-            rd => rd,
-            ack => ack,
-            bval => bval,
-            wdata => wdata,
-            rdata => rdata,
-            addr => addr
+            clk         => clk,
+            reset_n     => reset_n,
+            addr        => addr,
+            wr          => wr,
+            rd          => rd,
+            ack         => ack,
+            bval        => bval,
+            wdata       => wdata,
+            rdata       => rdata,
+            ram_clk     => ram_clk,
+            ram_reset_n => ram_reset_n,
+            ram_ack     => ram_ack,
+            ram_rdata   => ram_rdata,
+            ram_wdata   => ram_wdata,
+            ram_addr    => ram_addr,
+            ram_avalid  => ram_avalid,
+            ram_rnw     => ram_rnw
+        );
+    ram: fakeExtRam
+        generic map (
+            A_WIDTH => ATAG_WIDTH + AINDEX_WIDTH,
+            D_WIDTH => RAM_D_WIDTH,
+            LINE_WIDTH => 2**ADISP_WIDTH * 8
+        )
+        port map (
+            clk => ram_clk,
+            reset_n => ram_reset_n,
+            wdata => ram_wdata,
+            addr => ram_addr,
+            avalid => ram_avalid,
+            rnw => ram_rnw,
+            ack => ram_ack,
+            rdata => ram_rdata
         );
 
     drive_clk: process
@@ -77,6 +140,14 @@ begin
         wait for 5 ns;
         clk <= '1';
         wait for 5 ns;
+    end process;
+
+    drive_ram_clk: process
+    begin
+        ram_clk <= '0';
+        wait for 10 ns;
+        ram_clk <= '1';
+        wait for 10 ns;
     end process;
         
     test: process
@@ -114,6 +185,7 @@ begin
         wait for 20 ns;
         report("unreset");
         reset_n <= '1';
+        ram_reset_n <= '1';
         wr <= '0';
         rd <= '0';
         addr <= (others => 'U');
