@@ -302,11 +302,9 @@ begin
                 addr_latch <= addr; --remember address to show with data 0
             end if;
             --marking ram command for clearing
-            if (state = IDLE and rd = '1') or (state = WRITE_DATA and rw_cnt = D_WIDTH / RAM_D_WIDTH - 1) then
+            if state = IDLE and rd = '1' then
                 wr_cmd_cleared <= '0'; --clear cmd at the next clock
-            end if;
-            --removing mark
-            if state = WAIT_READ then
+            else
                 wr_cmd_cleared <= '1'; --can clear it now
             end if;
         end if;

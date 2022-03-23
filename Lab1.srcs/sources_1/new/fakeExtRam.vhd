@@ -63,6 +63,7 @@ architecture fakeExtRam_arch of fakeExtRam is
     signal wr: boolean := false;
 begin
     betterFake: process (clk, reset_n)
+        variable aindex_slv: std_logic_vector (D_WIDTH - 1 downto 0);
     begin
         if (reset_n = '0') then
             rd <= false;
@@ -70,7 +71,10 @@ begin
             ack <= '0';
             rw_cnt <= 0;
             for i in 0 to 2**A_WIDTH - 1 loop
-                mem(i) <= std_logic_vector(to_unsigned(i, LINE_WIDTH));
+                aindex_slv := std_logic_vector(to_unsigned(i, D_WIDTH));
+                for j in 0 to 3 loop
+                    mem(i)(D_WIDTH*(j+1) - 1 downto D_WIDTH*j) <= aindex_slv;
+                end loop;
             end loop;
         elsif clk'event and clk = '1' then
             if (not rd) and (not wr) then

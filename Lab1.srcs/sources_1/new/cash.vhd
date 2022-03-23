@@ -159,7 +159,7 @@ begin
             clk => clk,
             reset_n => reset_n,
             addr => addr_c(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
-            wr => wr_c,
+            wr => tWr,
             hit => hit
         );
     controlUnit_inst: controlUnit

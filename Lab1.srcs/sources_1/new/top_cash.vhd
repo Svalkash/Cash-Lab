@@ -203,7 +203,8 @@ begin
                 rd <= '1';
             end if;
             bval <= rand_slv(4);
-            addr <= "000" & rand_slv(2) & "00000" & rand_slv(2) & rand_slv(1) & "000";
+            addr <= "0000" & rand_slv(1) & "0000000" & rand_slv(1) & "000";
+            --addr <= "000" & rand_slv(2) & "00000" & rand_slv(2) & rand_slv(1) & "000";
             wdata <= rand_slv(32);
             --reset ALL - hard test
             wait on clk until clk = '0';
