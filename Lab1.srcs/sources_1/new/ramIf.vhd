@@ -95,7 +95,7 @@ architecture ramIf_arch of ramIf is
     --latched inputs
     signal addr_latch   : std_logic_vector(A_WIDTH - 1 downto 0);
     --CU states
-    type State_Type is (IDLE, WAIT_ACK, WAIT_READ, WRITE_DATA, READ_DATA, SHOW_ACK);
+    type State_Type is (IDLE, WAIT_READ, WRITE_ADDR, WRITE_DATA, READ_DATA, SHOW_ACK);
     --extra ADWAIT_RD to avoid storing RnW info
     signal state        : State_Type := IDLE;
     signal next_state   : State_Type;
@@ -142,27 +142,6 @@ architecture ramIf_arch of ramIf is
     
     signal rd_shiftReg  : std_logic_vector(D_WIDTH - 1 downto 0) := (others => 'U');
     signal rd_sr_shift  : std_logic := '0';
-    --write part:
-    --get wr=1
-    --wait for place in fifo
-    --write 1
-    --wait for place
-    --write 2
-    --...
-    --wait for ack from ram (=any not empty? read it then?)
-    --ack cache
-    --
-    --read part:
-    --get rd=1
-    --(wait for place)
-    --write addr to fifo
-    --(wait for ack = read not empty)
-    --read 1
-    --(wait for ack = read not empty)
-    --read 2
-    --...
-    --ack immediately when shiftreg is ready (last clock?)
-    --ah fuck it, i'll use counters instead
 begin
     --FIFO instances
     wr_fifo: fifo_46
@@ -229,30 +208,34 @@ begin
     end process rd_sr_p;
     
     --state machine - next state. also sets the counter
-    sm_next: process(state, rd, wr, rw_cnt, rd_fifo_empty)
+    sm_next: process(state, rd, wr, rw_cnt, rd_fifo_empty, wr_fifo_full)
     begin
         case state is
             when IDLE =>
                 if rd = '1' then
-                    next_state <= WAIT_READ;
+                    if wr_fifo_full = '0' then
+                        next_state <= WAIT_READ; --can write address immediately
+                    else
+                        next_state <= WRITE_ADDR;
+                    end if;
                 elsif wr = '1' then
                     next_state <= WRITE_DATA;
                 else
                     next_state <= IDLE;
                 end if;
                 
-            when WRITE_DATA =>
-                if rw_cnt = D_WIDTH / RAM_D_WIDTH - 1 then --if last byte and can write
-                    next_state <= WAIT_ACK;
+            when WRITE_ADDR =>
+                if wr_fifo_full = '0' then
+                    next_state <= WAIT_READ; --wrote address, wait for data
                 else
-                    next_state <= WRITE_DATA;
+                    next_state <= WRITE_ADDR;
                 end if;
                 
-            when WAIT_ACK =>
-                if rd_fifo_empty = '0' then --got ack, show it
+            when WRITE_DATA =>
+                if rw_cnt = D_WIDTH / RAM_D_WIDTH - 1 and wr_fifo_full = '0' then --if last byte and can write
                     next_state <= SHOW_ACK;
                 else
-                    next_state <= WAIT_ACK;
+                    next_state <= WRITE_DATA;
                 end if;
                 
             when WAIT_READ =>
@@ -281,7 +264,7 @@ begin
             rw_cnt <= 0;
         elsif clk'event and clk = '1' then
             --counter, it's related (though order doesn't matter)
-            if state = READ_DATA or state = WRITE_DATA then
+            if state = READ_DATA or (state = WRITE_DATA and wr_fifo_full = '0') then
                 rw_cnt <= rw_cnt + 1;
             elsif state = SHOW_ACK or state = IDLE then
                 rw_cnt <= 0;
@@ -298,20 +281,20 @@ begin
             wr_cmd_cleared <= '1';
         elsif clk'event and clk = '1' then
             --address latching
-            if state = IDLE and wr = '1' then
+            if state = IDLE and (wr = '1' or rd = '1') then
                 addr_latch <= addr; --remember address to show with data 0
             end if;
             --marking ram command for clearing
-            if state = IDLE and rd = '1' then
+            if ((state = IDLE and rd = '1') or state = WRITE_ADDR) and wr_fifo_full = '0' then
                 wr_cmd_cleared <= '0'; --clear cmd at the next clock
-            else
-                wr_cmd_cleared <= '1'; --can clear it now
+            elsif wr_fifo_full = '0' then
+                wr_cmd_cleared <= '1'; --cleared
             end if;
         end if;
     end process sm_control_sync;
 
     --sm actions - comb
-    sm_control: process(state, rd, wr, rw_cnt, addr, addr_latch, rd_fifo_empty, wr_cmd_cleared)
+    sm_control: process(state, rd, wr, rw_cnt, addr, addr_latch, rd_fifo_empty, wr_fifo_full, wr_cmd_cleared)
     begin
         --defaults - will it work?
         wr_in_rnw <= '0';
@@ -324,7 +307,7 @@ begin
         rd_sr_shift <= '0';
         ack <= '0';
         --clear ram cmd after sending
-        if wr_cmd_cleared = '0' then
+        if wr_cmd_cleared = '0' and wr_fifo_full = '0' then
             wr_in_rnw <= '0';
             wr_in_avalid <= '0';
             wr_in_addr <= (others => 'U');
@@ -333,7 +316,7 @@ begin
         --changes
         case state is
             when IDLE =>
-                if rd = '1' then
+                if rd = '1' and wr_fifo_full = '0' then --if full, do nothing
                     wr_in_rnw <= '1';
                     wr_in_avalid <= '1';
                     wr_in_addr <= addr;
@@ -343,21 +326,29 @@ begin
                     --need to latch the data, so nothing special here
                     --can speed up, but too lazy to implement it
                 end if;
+            
+            when WRITE_ADDR =>
+                if wr_fifo_full = '0' then --if full, do nothing
+                    wr_in_rnw <= '1';
+                    wr_in_avalid <= '1';
+                    wr_in_addr <= addr_latch; --use latched addr
+                    wr_fifo_wr_en <= '1';
+                end if;
                 
             when WRITE_DATA =>
                 --write addr with byte 0
                 if rw_cnt = 0 then
-                    wr_in_addr <= addr_latch;
+                    wr_in_rnw <= '0';
                     wr_in_avalid <= '1';
+                    wr_in_addr <= addr_latch;
                 else
                     wr_in_addr <= (others => 'U');
                     wr_in_avalid <= '0';
                 end if;
-                wr_fifo_wr_en <= '1';
-                wr_sr_shift <= '1';
-                
-            when WAIT_ACK =>
-                --do nothing, just wait
+                if wr_fifo_full = '0' then
+                    wr_fifo_wr_en <= '1';
+                    wr_sr_shift <= '1';
+                end if;
                 
             when WAIT_READ =>
                 rd_fifo_rd_en <= not rd_fifo_empty; --write to reg

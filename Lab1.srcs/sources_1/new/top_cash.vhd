@@ -145,9 +145,9 @@ begin
     drive_ram_clk: process
     begin
         ram_clk <= '0';
-        wait for 10 ns;
+        wait for 40 ns;
         ram_clk <= '1';
-        wait for 10 ns;
+        wait for 40 ns;
     end process;
         
     test: process
@@ -195,15 +195,18 @@ begin
         --loop
         for i in 1 to repeats loop
             --select operation
-            if (rand_logic = '1') then
+            --if (rand_logic = '1') then
+            if (i < 5) then
                 wr <= '1';
                 rd <= '0';
+                addr <= "00000" & "0000000" & rand_slv(1) & "000";
             else
                 wr <= '0';
                 rd <= '1';
+                addr <= "11111" & "0000000" & rand_slv(1) & "000";
             end if;
             bval <= rand_slv(4);
-            addr <= "0000" & rand_slv(1) & "0000000" & rand_slv(1) & "000";
+            --addr <= "0000" & rand_slv(1) & "0000000" & rand_slv(1) & "000";
             --addr <= "000" & rand_slv(2) & "00000" & rand_slv(2) & rand_slv(1) & "000";
             wdata <= rand_slv(32);
             --reset ALL - hard test

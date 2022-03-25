@@ -93,12 +93,12 @@ begin
                 end if;
             elsif wr then
                 rdata <= (others => 'U');
-                if rw_cnt < LINE_WIDTH / D_WIDTH then
-                    mem(addr_buf)(D_WIDTH * (rw_cnt+1) - 1 downto D_WIDTH * rw_cnt) <= wdata;
+                mem(addr_buf)(D_WIDTH * (rw_cnt+1) - 1 downto D_WIDTH * rw_cnt) <= wdata;
+                rw_cnt <= rw_cnt + 1;
+                ack <= '0';
+                if rw_cnt < LINE_WIDTH / D_WIDTH - 1 then
                     rw_cnt <= rw_cnt + 1;
-                    ack <= '0';
                 else
-                    ack <= '1';
                     rw_cnt <= 0;
                     wr <= false;
                 end if;
