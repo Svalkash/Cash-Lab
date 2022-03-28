@@ -16,7 +16,9 @@ entity controlUnit is
         dSel    : out   std_logic;
         ramWr   : out   std_logic;
         ramRd   : out   std_logic;
-        lock    : out   std_logic
+        
+        fifoEmpty:in   std_logic;
+        fifoRd  : out   std_logic
     );
 end controlUnit;
 
@@ -94,8 +96,9 @@ begin
     end process state_change;
     
 -- state-dependent logic
-    controls: process (state)
+    controls: process (state, wr, rd, fifoEmpty)
     begin
+        fifoRd <= '0'; --lock in most states
         case state is
             when IDLE =>
                 ack <= '0';
@@ -103,14 +106,14 @@ begin
                 dWr <= '0';
                 ramWr <= '0';
                 ramRd <= '0';
-                lock <= '0';
+                fifoRd <= not (wr or rd) and not fifoEmpty; --lock if already new cmd
             when RD_HIT =>
                 ack <= '1';
                 tWr <= '0';
                 dWr <= '0';
                 ramWr <= '0';
                 ramRd <= '0';
-                lock <= '1';
+                fifoRd <= not fifoEmpty; --unlock on the next tick
             when WR_HIT =>
                 ack <= '0';
                 tWr <= '0';
@@ -118,7 +121,6 @@ begin
                 dSel <= '0'; --WData + cash
                 ramWr <= '1';
                 ramRd <= '0';
-                lock <= '1';
             when WR_WAIT =>
                 ack <= '0';
                 tWr <= '0';
@@ -126,14 +128,13 @@ begin
                 dSel <= '0'; --WData + cash
                 ramWr <= '0';
                 ramRd <= '0';
-                lock <= '1';
             when WR_DONE =>
                 ack <= '1';
                 tWr <= '0';
                 dWr <= '0';
                 ramWr <= '0';
                 ramRd <= '0';
-                lock <= '1';
+                fifoRd <= not fifoEmpty; --unlock on the next tick
             when RAM_RD =>
                 ack <= '0'; --still not ready!
                 tWr <= '1'; --fix the tag after miss
@@ -141,7 +142,6 @@ begin
                 dSel <= '1'; --RAM
                 ramWr <= '0';
                 ramRd <= '1';
-                lock <= '1';
             when RD_WAIT =>
                 ack <= '0'; --still not ready!
                 tWr <= '0'; --fix the tag after miss
@@ -149,7 +149,6 @@ begin
                 dSel <= '1'; --RAM
                 ramWr <= '0';
                 ramRd <= '0';
-                lock <= '1';
         end case;
     end process controls;
 end controlUnit_arch;

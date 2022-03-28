@@ -25,7 +25,9 @@ architecture top_cash_arch of top_cash is
             RAM_D_WIDTH     : integer
         );
         port (
+            cpu_clk     : in    std_logic;
             clk     : in    std_logic;
+            cpu_reset_n : in    std_logic;
             reset_n : in    std_logic;
             
             addr    : in    std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto 0);
@@ -69,6 +71,9 @@ architecture top_cash_arch of top_cash is
         );
     end component;
     
+    signal cpu_clk      :     std_logic := '0';
+    signal cpu_reset_n  :     std_logic := '0';
+    
     signal clk      :     std_logic := '0';
     signal reset_n  :     std_logic := '0';
     signal wr       :     std_logic := '0';
@@ -99,6 +104,8 @@ begin
             RAM_D_WIDTH     => RAM_D_WIDTH
         )
         port map(
+            cpu_clk     => cpu_clk,
+            cpu_reset_n => cpu_reset_n,
             clk         => clk,
             reset_n     => reset_n,
             addr        => addr,
@@ -133,6 +140,14 @@ begin
             ack => ram_ack,
             rdata => ram_rdata
         );
+
+    drive_cpu_clk: process
+    begin
+        cpu_clk <= '0';
+        wait for 2 ns;
+        cpu_clk <= '1';
+        wait for 2 ns;
+    end process;
 
     drive_clk: process
     begin
@@ -184,6 +199,7 @@ begin
     begin
         wait for 20 ns;
         report("unreset");
+        cpu_reset_n <= '1';
         reset_n <= '1';
         ram_reset_n <= '1';
         wr <= '0';
@@ -191,7 +207,7 @@ begin
         addr <= (others => 'U');
         wdata <= (others => 'U');
         wait for 20 ns;
-        wait on clk until clk = '0';
+        wait on cpu_clk until cpu_clk = '0';
         --loop
         for i in 1 to repeats loop
             --select operation
@@ -210,17 +226,17 @@ begin
             --addr <= "000" & rand_slv(2) & "00000" & rand_slv(2) & rand_slv(1) & "000";
             wdata <= rand_slv(32);
             --reset ALL - hard test
-            wait on clk until clk = '0';
+            wait on cpu_clk until cpu_clk = '0';
             wr <= '0';
             rd <= '0';
             addr <= (others => 'U');
             wdata <= (others => 'U');
             --wait till acked
             if (ack = '0') then --special case for read-hit, it's ready after 1 clock
-                wait on clk until clk = '0' and ack = '1';
+                wait on cpu_clk until cpu_clk = '0' and ack = '1';
             end if;
             --wait 1 more clock to let the cash change to IDLE
-            wait on clk until clk = '0';
+            wait on cpu_clk until cpu_clk = '0';
         end loop;
     end process;
 

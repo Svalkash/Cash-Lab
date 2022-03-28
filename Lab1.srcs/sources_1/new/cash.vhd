@@ -11,10 +11,13 @@ entity cash is
         AINDEX_WIDTH    : integer := 7;
         ADISP_WIDTH     : integer := 4;
         D_WIDTH         : integer := 32;
-        RAM_D_WIDTH     : integer := 32
+        RAM_D_WIDTH     : integer := 32;
+        BVAL_WIDTH      : integer := 4
     );
     port (
+        cpu_clk : in    std_logic;
         clk     : in    std_logic;
+        cpu_reset_n : in    std_logic;
         reset_n : in    std_logic;
         
         addr    : in    std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto 0);
@@ -23,7 +26,7 @@ entity cash is
         rd      : in    std_logic;
         ack     : out    std_logic;
         
-        bval    : in    std_logic_vector(2**ADISP_WIDTH * 8 / D_WIDTH - 1 downto 0); --128/32 = 4
+        bval    : in    std_logic_vector(BVAL_WIDTH - 1 downto 0); --128/32 = 4
         wdata   : in    std_logic_vector(D_WIDTH - 1 downto 0);
         rdata   : out   std_logic_vector(D_WIDTH - 1 downto 0);
         
@@ -68,7 +71,8 @@ architecture cash_arch of cash is
             dSel    : out   std_logic;
             ramWr   : out   std_logic;
             ramRd   : out   std_logic;
-            lock    : out   std_logic
+            fifoEmpty:in   std_logic;
+            fifoRd  : out   std_logic
         );
     end component;
     component dataMem
@@ -113,27 +117,92 @@ architecture cash_arch of cash is
             ram_rnw     : out   std_logic
         );
     end component;
+    COMPONENT fifo_54_reset
+      PORT (
+        wr_clk : IN STD_LOGIC;
+        wr_rst : IN STD_LOGIC;
+        rd_clk : IN STD_LOGIC;
+        rd_rst : IN STD_LOGIC;
+        din : IN STD_LOGIC_VECTOR(53 DOWNTO 0);
+        wr_en : IN STD_LOGIC;
+        rd_en : IN STD_LOGIC;
+        dout : OUT STD_LOGIC_VECTOR(53 DOWNTO 0);
+        full : OUT STD_LOGIC;
+        empty : OUT STD_LOGIC
+      );
+    END COMPONENT;
+    COMPONENT fifo_33_reset
+      PORT (
+        wr_clk : IN STD_LOGIC;
+        wr_rst : IN STD_LOGIC;
+        rd_clk : IN STD_LOGIC;
+        rd_rst : IN STD_LOGIC;
+        din : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
+        wr_en : IN STD_LOGIC;
+        rd_en : IN STD_LOGIC;
+        dout : OUT STD_LOGIC_VECTOR(32 DOWNTO 0);
+        full : OUT STD_LOGIC;
+        empty : OUT STD_LOGIC
+      );
+    END COMPONENT;
+    --fifo stuff - write side (CPU -> cash)
+    signal wr_fifo_wr_rst   : std_logic;
+    signal wr_fifo_rd_rst   : std_logic;
+    signal wr_fifo_wr_en    : std_logic;
+    signal wr_fifo_rd_en    : std_logic;
+    signal wr_fifo_full     : std_logic;
+    signal wr_fifo_empty    : std_logic;
+    signal wr_fifo_din      : std_logic_vector(53 downto 0);
+        alias wr_in_addr    : std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto 0)
+            is wr_fifo_din(53 downto (D_WIDTH + BVAL_WIDTH + 2));
+        alias wr_in_wdata   : std_logic_vector(D_WIDTH - 1 downto 0)
+            is wr_fifo_din((D_WIDTH + BVAL_WIDTH + 2) - 1 downto (BVAL_WIDTH + 2));
+        alias wr_in_bval    : std_logic_vector(BVAL_WIDTH - 1 downto 0)
+            is wr_fifo_din((BVAL_WIDTH + 2) - 1 downto 2);
+        alias wr_in_wr      : std_logic
+            is wr_fifo_din(1);
+        alias wr_in_rd      : std_logic
+            is wr_fifo_din(0);
+    signal wr_fifo_dout     : std_logic_vector(53 downto 0);
+        alias wr_out_addr   : std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto 0)
+            is wr_fifo_dout(53 downto (D_WIDTH + BVAL_WIDTH + 2));
+        alias wr_out_wdata  : std_logic_vector(D_WIDTH - 1 downto 0)
+            is wr_fifo_dout((D_WIDTH + BVAL_WIDTH + 2) - 1 downto (BVAL_WIDTH + 2));
+        alias wr_out_bval   : std_logic_vector(BVAL_WIDTH - 1 downto 0)
+            is wr_fifo_dout((BVAL_WIDTH + 2) - 1 downto 2);
+        alias wr_out_wr     : std_logic
+            is wr_fifo_dout(1);
+        alias wr_out_rd     : std_logic
+            is wr_fifo_dout(0);
+    signal wr_cleared       : std_logic := '1';
+    --read side:
+    signal rd_fifo_wr_rst   : std_logic;
+    signal rd_fifo_rd_rst   : std_logic;
+    signal rd_fifo_wr_en    : std_logic;
+    signal rd_fifo_rd_en    : std_logic;
+    signal rd_fifo_full     : std_logic;
+    signal rd_fifo_empty    : std_logic;
+    signal rd_fifo_din      : std_logic_vector(32 downto 0);
+        alias rd_in_rdata   : std_logic_vector(D_WIDTH - 1 downto 0)
+            is rd_fifo_din(32 downto 1);
+        alias rd_in_ack     : std_logic
+            is rd_fifo_din(0);
+    signal rd_fifo_dout     : std_logic_vector(32 downto 0);
+        alias rd_out_rdata  : std_logic_vector(D_WIDTH - 1 downto 0)
+            is rd_fifo_dout(32 downto 1);
+        alias rd_out_ack    : std_logic
+            is rd_fifo_dout(0);
+    signal rd_out_ack_d     : std_logic;
+    
     --aliases
     alias aTag      : std_logic_vector(ATAG_WIDTH - 1 downto 0)
-        is addr(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto AINDEX_WIDTH + ADISP_WIDTH);
+        is wr_out_addr(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto AINDEX_WIDTH + ADISP_WIDTH);
     alias aIndex    : std_logic_vector(AINDEX_WIDTH - 1 downto 0)
-        is addr(AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH);
+        is wr_out_addr(AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH);
     alias aDisp     : std_logic_vector(ADISP_WIDTH - 1 downto 0)
-        is addr(ADISP_WIDTH - 1 downto 0);
+        is wr_out_addr(ADISP_WIDTH - 1 downto 0);
     --new control signal
     signal lock         : std_logic := '0'; --if '1', latches are locked
-    --latches for CPU interface
-    signal addr_latch   : std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto 0) := (others => '0');
-    signal wr_latch     : std_logic := '0';
-    signal rd_latch     : std_logic := '0';
-    signal bval_latch   : std_logic_vector(2**ADISP_WIDTH * 8 / D_WIDTH - 1 downto 0) := (others => '0'); --128/32 = 4
-    signal wdata_latch  : std_logic_vector(D_WIDTH - 1 downto 0);
-    --current signals for CU and others
-    signal addr_c   : std_logic_vector(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto 0) := (others => '0');
-    signal wr_c     : std_logic := '0';
-    signal rd_c     : std_logic := '0';
-    signal bval_c   : std_logic_vector(2**ADISP_WIDTH * 8 / D_WIDTH - 1 downto 0) := (others => '0'); --128/32 = 4
-    signal wdata_c  : std_logic_vector(D_WIDTH - 1 downto 0);
     --tagMem signals
     signal hit  : std_logic := '0';
     signal tWr  : std_logic := '0'; --tag write
@@ -150,6 +219,68 @@ architecture cash_arch of cash is
     signal ramIf_wData  : std_logic_vector(2**ADISP_WIDTH * 8 - 1 downto 0) := (others => '0');
     signal ramIf_rData  : std_logic_vector(2**ADISP_WIDTH * 8 - 1 downto 0) := (others => '0');
 begin
+    --FIFO instances
+    wr_fifo: fifo_54_reset
+        port map (
+            wr_clk  => cpu_clk,
+            rd_clk  => clk,
+            wr_rst  => wr_fifo_wr_rst,
+            rd_rst  => wr_fifo_rd_rst,
+            wr_en   => wr_fifo_wr_en,
+            rd_en   => wr_fifo_rd_en,
+            full    => wr_fifo_full,
+            empty   => wr_fifo_empty,
+            din     => wr_fifo_din,
+            dout    => wr_fifo_dout
+        );
+    rd_fifo: fifo_33_reset
+        port map (
+            wr_clk  => clk,
+            rd_clk  => cpu_clk,
+            wr_rst  => rd_fifo_wr_rst,
+            rd_rst  => rd_fifo_rd_rst,
+            wr_en   => rd_fifo_wr_en,
+            rd_en   => rd_fifo_rd_en,
+            full    => rd_fifo_full,
+            empty   => rd_fifo_empty,
+            din     => rd_fifo_din,
+            dout    => rd_fifo_dout
+        );
+    --obvious assignments
+    wr_fifo_wr_rst <= not cpu_reset_n;
+    wr_fifo_rd_rst <= not reset_n;
+    wr_fifo_wr_en <= ((wr or rd) or (not wr_cleared)) and not wr_fifo_full; --write when cmd or need to clear
+    process(cpu_clk)
+    begin
+        if cpu_clk'event and cpu_clk = '1' and wr_fifo_full = '0' then
+            if wr = '1' or rd = '1' then
+                wr_cleared <= '0';
+            elsif wr_cleared = '0' then
+                wr_cleared <= '1';
+            end if;
+        end if;
+    end process;
+    wr_in_addr <= addr;
+    wr_in_wdata <= wdata;
+    wr_in_bval <= bval;
+    wr_in_wr <= wr;
+    wr_in_rd <= rd;
+    
+    --read side
+    rd_fifo_wr_rst <= not reset_n;
+    rd_fifo_rd_rst <= not cpu_reset_n;
+    rd_fifo_wr_en <= not rd_fifo_full; --'1', technically
+    rd_fifo_rd_en <= not rd_fifo_empty;
+    rdata <= rd_out_rdata;
+    --big kostyl'
+    process(cpu_clk)
+    begin
+        if cpu_clk'event and cpu_clk = '1' then
+            rd_out_ack_d <= rd_out_ack;
+        end if;
+    end process;
+    ack <= rd_out_ack and not rd_out_ack_d;
+    --parts
     tagMem_inst: tagMem
         generic map(
             ATAG_WIDTH => ATAG_WIDTH,
@@ -158,7 +289,7 @@ begin
         port map(
             clk => clk,
             reset_n => reset_n,
-            addr => addr_c(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
+            addr => wr_out_addr(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
             wr => tWr,
             hit => hit
         );
@@ -166,17 +297,18 @@ begin
         port map(
             clk => clk,
             reset_n => reset_n,
-            wr => wr_c,
-            rd => rd_c,
+            wr => wr_out_wr,
+            rd => wr_out_rd,
             hit => hit,
             ramAck => ramAck,
-            ack => ack,
+            ack => rd_in_ack,
             tWr => tWr,
             dWr => dWr,
             dSel => dSel,
             ramWr => ramWr,
             ramRd => ramRd,
-            lock => lock
+            fifoEmpty => wr_fifo_empty,
+            fifoRd => wr_fifo_rd_en
         );
     dataMem_inst: dataMem
         generic map(
@@ -186,7 +318,7 @@ begin
         port map(
             clk => clk,
             reset_n => reset_n,
-            addr => addr_c(AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
+            addr => wr_out_addr(AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
             wdata => dMem_wData,
             rdata => dMem_rData,
             wr => dWr
@@ -200,7 +332,7 @@ begin
         port map(
             clk         => clk,
             reset_n     => reset_n,
-            addr        => addr_c(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
+            addr        => wr_out_addr(ATAG_WIDTH + AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH),
             wdata       => ramIf_wData,
             wr          => ramWr,
             rd          => ramRd,
@@ -216,69 +348,29 @@ begin
             ram_rnw     => ram_rnw
         );
     
-    -- latches - CPU interface
-    -- if locked, use latched logic, otherwise - inputs
-    cpu_if: process (clk, reset_n, lock)
-    begin
-        if (reset_n = '0') then
-            addr_latch <= (others => '0');
-            wr_latch <= '0';
-            rd_latch <= '0';
-            bval_latch <= (others => '0');
-            wdata_latch <= (others => '0');
-        elsif clk'event and clk = '1' and lock = '0' then
-            addr_latch <= addr;
-            wr_latch <= wr;
-            rd_latch <= rd;
-            bval_latch <= bval;
-            wdata_latch <= wdata;
-        end if;
-    end process cpu_if;
-    
-    --CC for latches (choose from input and latches)
-    cpu_if_cc: process (lock, addr, addr_latch, wr, wr_latch, rd, rd_latch, bval, bval_latch, wdata, wdata_latch)
-    begin
-        if (lock = '1') then
-            addr_c <= addr_latch;
-            wr_c <= wr_latch;
-            rd_c <= rd_latch;
-            bval_c <= bval_latch;
-            wdata_c <= wdata_latch;
-        else
-            addr_c <= addr;
-            wr_c <= wr;
-            rd_c <= rd;
-            bval_c <= bval;
-            wdata_c <= wdata;
-        end if;
-    end process cpu_if_cc;
-    
     --CC1 - dataMem output
-    --forcefully aligned to 32-bit words
-    --WHY THE F IS CLOG SO LONG HERE
-    --PARAMETERS ARE FUN
-    CC1: process (dMem_rData, addr_c(ADISP_WIDTH - 1 downto integer(ceil(log2(real(2**ADISP_WIDTH * 8 / D_WIDTH - 1))))))
+    CC1: process (dMem_rData, wr_out_addr(ADISP_WIDTH - 1 downto 2))
         variable byteAddr : natural;
     begin
         --because binary shift is terrible here, and i JUST NEED TO MULTIPLY
-        byteAddr := conv_integer(addr_c(ADISP_WIDTH - 1 downto integer(ceil(log2(real(2**ADISP_WIDTH * 8 / D_WIDTH - 1)))))) * (2**ADISP_WIDTH * 8 / D_WIDTH) * 8;
-        rdata <= dMem_rData(byteAddr + D_WIDTH - 1 downto byteAddr);
+        byteAddr := conv_integer(wr_out_addr(ADISP_WIDTH - 1 downto 2)) * BVAL_WIDTH * 8;
+        rd_in_rdata <= dMem_rData(byteAddr + D_WIDTH - 1 downto byteAddr);
     end process CC1;
     
     --CC2 - ram write input AND dataMem write (before CC3)
-    CC2: process(dMem_rData, wdata_c, bval_c, dSel, addr_c(ADISP_WIDTH - 1 downto integer(ceil(log2(real(2**ADISP_WIDTH * 8 / D_WIDTH - 1))))))
+    CC2: process(dMem_rData, wr_out_wdata, wr_out_bval, dSel, wr_out_addr(ADISP_WIDTH - 1 downto 2))
         variable wordAddr, byteAddr : natural;
         variable dMem_rData_filt: std_logic_vector(D_WIDTH - 1 downto 0);
     begin
         --rounded address to insert to
-        wordAddr := conv_integer(addr_c(ADISP_WIDTH - 1 downto integer(ceil(log2(real(2**ADISP_WIDTH * 8 / D_WIDTH - 1)))))) * (2**ADISP_WIDTH * 8 / D_WIDTH) * 8;
+        wordAddr := conv_integer(wr_out_addr(ADISP_WIDTH - 1 downto 2)) * 8;
         --original data
         ramIf_wData <= dMem_rData; --hope it works this way
         --compose
-        for i in 0 to (2**ADISP_WIDTH * 8 / D_WIDTH - 1) loop
+        for i in 0 to BVAL_WIDTH - 1 loop
             byteAddr := wordAddr + 8 * i;
-            if bval_c(i) = '1' then
-                ramIf_wData(byteAddr + 7 downto byteAddr) <= wdata_c(8 * i + 7 downto 8 * i);
+            if wr_out_bval(i) = '1' then
+                ramIf_wData(byteAddr + 7 downto byteAddr) <= wr_out_wdata(8 * i + 7 downto 8 * i);
             else
                 ramIf_wData(byteAddr + 7 downto byteAddr) <= dMem_rData(byteAddr + 7 downto byteAddr);
             end if;
