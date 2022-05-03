@@ -201,8 +201,6 @@ architecture cash_arch of cash is
         is wr_out_addr(AINDEX_WIDTH + ADISP_WIDTH - 1 downto ADISP_WIDTH);
     alias aDisp     : std_logic_vector(ADISP_WIDTH - 1 downto 0)
         is wr_out_addr(ADISP_WIDTH - 1 downto 0);
-    --new control signal
-    signal lock         : std_logic := '0'; --if '1', latches are locked
     --tagMem signals
     signal hit  : std_logic := '0';
     signal tWr  : std_logic := '0'; --tag write
@@ -363,7 +361,7 @@ begin
         variable dMem_rData_filt: std_logic_vector(D_WIDTH - 1 downto 0);
     begin
         --rounded address to insert to
-        wordAddr := conv_integer(wr_out_addr(ADISP_WIDTH - 1 downto 2)) * 8;
+        wordAddr := conv_integer(wr_out_addr(ADISP_WIDTH - 1 downto 2)) * BVAL_WIDTH * 8;
         --original data
         ramIf_wData <= dMem_rData; --hope it works this way
         --compose

@@ -11,34 +11,34 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="3085083800fs"></ZoomEndTime>
-      <Cursor1Time time="42230000fs"></Cursor1Time>
+      <ZoomStartTime time="4508600000fs"></ZoomStartTime>
+      <ZoomEndTime time="4943600001fs"></ZoomEndTime>
+      <Cursor1Time time="4571000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="112"></NameColumnWidth>
-      <ValueColumnWidth column_width="58"></ValueColumnWidth>
+      <NameColumnWidth column_width="141"></NameColumnWidth>
+      <ValueColumnWidth column_width="129"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="36" />
-   <wvobject type="divider" fp_name="divider32">
-      <obj_property name="label">CPU_IF</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
+   <WVObjectSize size="61" />
    <wvobject fp_name="/top_cash/cash_inst/cpu_clk" type="logic">
       <obj_property name="ElementShortName">cpu_clk</obj_property>
       <obj_property name="ObjectShortName">cpu_clk</obj_property>
    </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/cpu_reset_n" type="logic">
+      <obj_property name="ElementShortName">cpu_reset_n</obj_property>
+      <obj_property name="ObjectShortName">cpu_reset_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/reset_n" type="logic">
+      <obj_property name="ElementShortName">reset_n</obj_property>
+      <obj_property name="ObjectShortName">reset_n</obj_property>
+   </wvobject>
    <wvobject fp_name="/top_cash/cash_inst/addr" type="array">
       <obj_property name="ElementShortName">addr[15:0]</obj_property>
       <obj_property name="ObjectShortName">addr[15:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/wdata" type="array">
-      <obj_property name="ElementShortName">wdata[31:0]</obj_property>
-      <obj_property name="ObjectShortName">wdata[31:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/bval" type="array">
-      <obj_property name="ElementShortName">bval[3:0]</obj_property>
-      <obj_property name="ObjectShortName">bval[3:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/top_cash/cash_inst/wr" type="logic">
       <obj_property name="ElementShortName">wr</obj_property>
@@ -48,21 +48,85 @@
       <obj_property name="ElementShortName">rd</obj_property>
       <obj_property name="ObjectShortName">rd</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/rdata" type="array">
-      <obj_property name="ElementShortName">rdata[31:0]</obj_property>
-      <obj_property name="ObjectShortName">rdata[31:0]</obj_property>
-   </wvobject>
    <wvobject fp_name="/top_cash/cash_inst/ack" type="logic">
       <obj_property name="ElementShortName">ack</obj_property>
       <obj_property name="ObjectShortName">ack</obj_property>
    </wvobject>
-   <wvobject type="divider" fp_name="divider35">
-      <obj_property name="label">INTERNAL</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/bval" type="array">
+      <obj_property name="ElementShortName">bval[3:0]</obj_property>
+      <obj_property name="ObjectShortName">bval[3:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/clk" type="logic">
-      <obj_property name="ElementShortName">clk</obj_property>
-      <obj_property name="ObjectShortName">clk</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/wdata" type="array">
+      <obj_property name="ElementShortName">wdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/rdata" type="array">
+      <obj_property name="ElementShortName">rdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ram_clk" type="logic">
+      <obj_property name="ElementShortName">ram_clk</obj_property>
+      <obj_property name="ObjectShortName">ram_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ram_reset_n" type="logic">
+      <obj_property name="ElementShortName">ram_reset_n</obj_property>
+      <obj_property name="ObjectShortName">ram_reset_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ram_ack" type="logic">
+      <obj_property name="ElementShortName">ram_ack</obj_property>
+      <obj_property name="ObjectShortName">ram_ack</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ram_rdata" type="array">
+      <obj_property name="ElementShortName">ram_rdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ram_rdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ram_wdata" type="array">
+      <obj_property name="ElementShortName">ram_wdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ram_wdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ram_addr" type="array">
+      <obj_property name="ElementShortName">ram_addr[11:0]</obj_property>
+      <obj_property name="ObjectShortName">ram_addr[11:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ram_avalid" type="logic">
+      <obj_property name="ElementShortName">ram_avalid</obj_property>
+      <obj_property name="ObjectShortName">ram_avalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ram_rnw" type="logic">
+      <obj_property name="ElementShortName">ram_rnw</obj_property>
+      <obj_property name="ObjectShortName">ram_rnw</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/wr_fifo_wr_rst" type="logic">
+      <obj_property name="ElementShortName">wr_fifo_wr_rst</obj_property>
+      <obj_property name="ObjectShortName">wr_fifo_wr_rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/wr_fifo_rd_rst" type="logic">
+      <obj_property name="ElementShortName">wr_fifo_rd_rst</obj_property>
+      <obj_property name="ObjectShortName">wr_fifo_rd_rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/wr_fifo_wr_en" type="logic">
+      <obj_property name="ElementShortName">wr_fifo_wr_en</obj_property>
+      <obj_property name="ObjectShortName">wr_fifo_wr_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/wr_fifo_rd_en" type="logic">
+      <obj_property name="ElementShortName">wr_fifo_rd_en</obj_property>
+      <obj_property name="ObjectShortName">wr_fifo_rd_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/wr_fifo_full" type="logic">
+      <obj_property name="ElementShortName">wr_fifo_full</obj_property>
+      <obj_property name="ObjectShortName">wr_fifo_full</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/wr_fifo_empty" type="logic">
+      <obj_property name="ElementShortName">wr_fifo_empty</obj_property>
+      <obj_property name="ObjectShortName">wr_fifo_empty</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/wr_fifo_din" type="array">
+      <obj_property name="ElementShortName">wr_fifo_din[53:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_fifo_din[53:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/wr_fifo_dout" type="array">
+      <obj_property name="ElementShortName">wr_fifo_dout[53:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_fifo_dout[53:0]</obj_property>
    </wvobject>
    <wvobject fp_name="vbus242" type="vbus">
       <obj_property name="label">(cash) addr</obj_property>
@@ -309,21 +373,37 @@
       <obj_property name="ObjectShortName">[0]</obj_property>
       <obj_property name="label">(cash) rd</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/hit" type="logic">
-      <obj_property name="ElementShortName">hit</obj_property>
-      <obj_property name="ObjectShortName">hit</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/wr_cleared" type="logic">
+      <obj_property name="ElementShortName">wr_cleared</obj_property>
+      <obj_property name="ObjectShortName">wr_cleared</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/tWr" type="logic">
-      <obj_property name="ElementShortName">tWr</obj_property>
-      <obj_property name="ObjectShortName">tWr</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_wr_rst" type="logic">
+      <obj_property name="ElementShortName">rd_fifo_wr_rst</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_wr_rst</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/dWr" type="logic">
-      <obj_property name="ElementShortName">dWr</obj_property>
-      <obj_property name="ObjectShortName">dWr</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_rd_rst" type="logic">
+      <obj_property name="ElementShortName">rd_fifo_rd_rst</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_rd_rst</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/dSel" type="logic">
-      <obj_property name="ElementShortName">dSel</obj_property>
-      <obj_property name="ObjectShortName">dSel</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_wr_en" type="logic">
+      <obj_property name="ElementShortName">rd_fifo_wr_en</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_wr_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_rd_en" type="logic">
+      <obj_property name="ElementShortName">rd_fifo_rd_en</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_rd_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_full" type="logic">
+      <obj_property name="ElementShortName">rd_fifo_full</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_full</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_empty" type="logic">
+      <obj_property name="ElementShortName">rd_fifo_empty</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_empty</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_din" type="array">
+      <obj_property name="ElementShortName">rd_fifo_din[32:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_din[32:0]</obj_property>
    </wvobject>
    <wvobject fp_name="vbus349" type="vbus">
       <obj_property name="label">(cash) rdata</obj_property>
@@ -463,60 +543,80 @@
       <obj_property name="ObjectShortName">[0]</obj_property>
       <obj_property name="label">(cash) ack</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/controlUnit_inst/state" type="other">
-      <obj_property name="ElementShortName">state</obj_property>
-      <obj_property name="ObjectShortName">state</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_dout" type="array">
+      <obj_property name="ElementShortName">rd_fifo_dout[32:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_fifo_dout[32:0]</obj_property>
    </wvobject>
-   <wvobject type="divider" fp_name="divider40">
-      <obj_property name="label">RAM_IF</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/rd_out_ack_d" type="logic">
+      <obj_property name="ElementShortName">rd_out_ack_d</obj_property>
+      <obj_property name="ObjectShortName">rd_out_ack_d</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/ram_clk" type="logic">
-      <obj_property name="ElementShortName">ram_clk</obj_property>
-      <obj_property name="ObjectShortName">ram_clk</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/hit" type="logic">
+      <obj_property name="ElementShortName">hit</obj_property>
+      <obj_property name="ObjectShortName">hit</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/controlUnit_inst/ramWr" type="logic">
+   <wvobject fp_name="/top_cash/cash_inst/tWr" type="logic">
+      <obj_property name="ElementShortName">tWr</obj_property>
+      <obj_property name="ObjectShortName">tWr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/dWr" type="logic">
+      <obj_property name="ElementShortName">dWr</obj_property>
+      <obj_property name="ObjectShortName">dWr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/dSel" type="logic">
+      <obj_property name="ElementShortName">dSel</obj_property>
+      <obj_property name="ObjectShortName">dSel</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/ramWr" type="logic">
       <obj_property name="ElementShortName">ramWr</obj_property>
       <obj_property name="ObjectShortName">ramWr</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/controlUnit_inst/ramRd" type="logic">
+   <wvobject fp_name="/top_cash/cash_inst/ramRd" type="logic">
       <obj_property name="ElementShortName">ramRd</obj_property>
       <obj_property name="ObjectShortName">ramRd</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/controlUnit_inst/ramAck" type="logic">
+   <wvobject fp_name="/top_cash/cash_inst/ramAck" type="logic">
       <obj_property name="ElementShortName">ramAck</obj_property>
       <obj_property name="ObjectShortName">ramAck</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/ram_addr" type="array">
-      <obj_property name="ElementShortName">ram_addr[11:0]</obj_property>
-      <obj_property name="ObjectShortName">ram_addr[11:0]</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/dMem_wData" type="array">
+      <obj_property name="ElementShortName">dMem_wData[127:0]</obj_property>
+      <obj_property name="ObjectShortName">dMem_wData[127:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/ram_avalid" type="logic">
-      <obj_property name="ElementShortName">ram_avalid</obj_property>
-      <obj_property name="ObjectShortName">ram_avalid</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/dMem_rData" type="array">
+      <obj_property name="ElementShortName">dMem_rData[127:0]</obj_property>
+      <obj_property name="ObjectShortName">dMem_rData[127:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/ram_wdata" type="array">
-      <obj_property name="ElementShortName">ram_wdata[31:0]</obj_property>
-      <obj_property name="ObjectShortName">ram_wdata[31:0]</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/ramIf_wData" type="array">
+      <obj_property name="ElementShortName">ramIf_wData[127:0]</obj_property>
+      <obj_property name="ObjectShortName">ramIf_wData[127:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/ram_rnw" type="logic">
-      <obj_property name="ElementShortName">ram_rnw</obj_property>
-      <obj_property name="ObjectShortName">ram_rnw</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/ramIf_rData" type="array">
+      <obj_property name="ElementShortName">ramIf_rData[127:0]</obj_property>
+      <obj_property name="ObjectShortName">ramIf_rData[127:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/ram_rdata" type="array">
-      <obj_property name="ElementShortName">ram_rdata[31:0]</obj_property>
-      <obj_property name="ObjectShortName">ram_rdata[31:0]</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/ATAG_WIDTH" type="other">
+      <obj_property name="ElementShortName">ATAG_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">ATAG_WIDTH</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/ram_ack" type="logic">
-      <obj_property name="ElementShortName">ram_ack</obj_property>
-      <obj_property name="ObjectShortName">ram_ack</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/AINDEX_WIDTH" type="other">
+      <obj_property name="ElementShortName">AINDEX_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">AINDEX_WIDTH</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/state" type="other">
-      <obj_property name="ElementShortName">state</obj_property>
-      <obj_property name="ObjectShortName">state</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/ADISP_WIDTH" type="other">
+      <obj_property name="ElementShortName">ADISP_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">ADISP_WIDTH</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/ramIf_inst/rw_cnt" type="other">
-      <obj_property name="ElementShortName">rw_cnt</obj_property>
-      <obj_property name="ObjectShortName">rw_cnt</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/D_WIDTH" type="other">
+      <obj_property name="ElementShortName">D_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">D_WIDTH</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/RAM_D_WIDTH" type="other">
+      <obj_property name="ElementShortName">RAM_D_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">RAM_D_WIDTH</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/BVAL_WIDTH" type="other">
+      <obj_property name="ElementShortName">BVAL_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">BVAL_WIDTH</obj_property>
    </wvobject>
 </wave_config>

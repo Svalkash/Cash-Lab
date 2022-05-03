@@ -160,9 +160,9 @@ begin
     drive_ram_clk: process
     begin
         ram_clk <= '0';
-        wait for 40 ns;
+        wait for 17 ns;
         ram_clk <= '1';
-        wait for 40 ns;
+        wait for 17 ns;
     end process;
         
     test: process
@@ -195,7 +195,11 @@ begin
             return slv;
         end function;
         --real params
-        constant repeats : integer := 100;
+        variable time_start, time_end, time_delta, time_avg : time;
+        variable time_total : time := 0ps;
+        constant nops_load : integer := 2048;
+        constant nops_test : integer := 1024;
+        constant test_mode : integer := 1; -- 0 - test, 1 - cash size, 2 - 2*cash, 3 - 4*cash, 4 - full RAM
     begin
         wait for 20 ns;
         report("unreset");
@@ -207,37 +211,57 @@ begin
         addr <= (others => 'U');
         wdata <= (others => 'U');
         wait for 20 ns;
-        wait on cpu_clk until cpu_clk = '0';
-        --loop
-        for i in 1 to repeats loop
+        wait on cpu_clk until cpu_clk = '1';
+        for i in 1 to (nops_load + nops_test) loop
             --select operation
-            --if (rand_logic = '1') then
-            if (i < 5) then
+            if (test_mode = 0 and rand_logic = '1') then
                 wr <= '1';
                 rd <= '0';
-                addr <= "00000" & "0000000" & rand_slv(1) & "000";
             else
                 wr <= '0';
                 rd <= '1';
-                addr <= "11111" & "0000000" & rand_slv(1) & "000";
             end if;
             bval <= rand_slv(4);
-            --addr <= "0000" & rand_slv(1) & "0000000" & rand_slv(1) & "000";
+            case test_mode is
+                when 1 =>
+                    addr <= "00000"             & rand_slv(7)   & rand_slv(2)&"00";
+                when 2 =>
+                    addr <= "0000"&rand_slv(1)  & rand_slv(7)   & rand_slv(2)&"00";
+                when 3 =>
+                    addr <= "000"&rand_slv(2)   & rand_slv(7)   & rand_slv(2)&"00";
+                when 4 =>
+                    addr <= rand_slv(5)         & rand_slv(7)   & rand_slv(2)&"00";
+                when others =>
+                    addr <= "0000"&rand_slv(1)  & "0000000"     & rand_slv(1)&"000";
+            end case;
             --addr <= "000" & rand_slv(2) & "00000" & rand_slv(2) & rand_slv(1) & "000";
             wdata <= rand_slv(32);
             --reset ALL - hard test
-            wait on cpu_clk until cpu_clk = '0';
+            wait on cpu_clk until cpu_clk = '1';
             wr <= '0';
             rd <= '0';
             addr <= (others => 'U');
             wdata <= (others => 'U');
+            bval <= (others => 'U');
+            time_start := now;
             --wait till acked
             if (ack = '0') then --special case for read-hit, it's ready after 1 clock
-                wait on cpu_clk until cpu_clk = '0' and ack = '1';
+                wait on cpu_clk until cpu_clk = '1' and ack = '1';
             end if;
             --wait 1 more clock to let the cash change to IDLE
-            wait on cpu_clk until cpu_clk = '0';
+            wait on cpu_clk until cpu_clk = '1';
+            time_end := now;
+            time_delta := time_end - time_start;
+            if i > nops_load then
+                time_total := time_total + time_delta;
+            elsif i = nops_load then
+                report "Loading complete.";
+            end if;
         end loop;
+        report "Total: " &  time'image(time_total);
+        time_avg := time_total / nops_test;
+        report "Avg. per read: " &  time'image(time_avg);
+        assert false report "Simulation Finished" severity failure;
     end process;
 
 end top_cash_arch;
