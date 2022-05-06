@@ -175,6 +175,9 @@ architecture cash_arch of cash is
         alias wr_out_rd     : std_logic
             is wr_fifo_dout(0);
     signal wr_cleared       : std_logic := '1';
+    signal wr_out_mask      : std_logic := '1';
+    signal wr_out_wr_masked : std_logic;
+    signal wr_out_rd_masked : std_logic;
     --read side:
     signal rd_fifo_wr_rst   : std_logic;
     signal rd_fifo_rd_rst   : std_logic;
@@ -192,7 +195,8 @@ architecture cash_arch of cash is
             is rd_fifo_dout(32 downto 1);
         alias rd_out_ack    : std_logic
             is rd_fifo_dout(0);
-    signal rd_out_ack_d     : std_logic;
+    signal rd_cleared       : std_logic := '1';
+    signal rd_out_mask     : std_logic := '0';
     
     --aliases
     alias aTag      : std_logic_vector(ATAG_WIDTH - 1 downto 0)
@@ -263,21 +267,47 @@ begin
     wr_in_bval <= bval;
     wr_in_wr <= wr;
     wr_in_rd <= rd;
+    process(clk)
+    begin
+        if clk'event and clk = '1' then
+            if (wr_out_wr = '1' or wr_out_rd = '1') and rd_in_ack = '1' then
+                wr_out_mask <= '0';
+            else
+                wr_out_mask <= '1';
+            end if;
+        end if;
+    end process;
+    wr_out_wr_masked <= wr_out_wr and wr_out_mask;
+    wr_out_rd_masked <= wr_out_rd and wr_out_mask;
     
     --read side
+    rd_fifo_wr_en <= (rd_in_ack or (not rd_cleared)) and not rd_fifo_full; --write when cmd or need to clear
+    process(clk)
+    begin
+        if clk'event and clk = '1' and rd_fifo_full = '0' then
+            if rd_in_ack = '1' then
+                rd_cleared <= '0';
+            elsif rd_cleared = '0' then
+                rd_cleared <= '1';
+            end if;
+        end if;
+    end process;
     rd_fifo_wr_rst <= not reset_n;
     rd_fifo_rd_rst <= not cpu_reset_n;
-    rd_fifo_wr_en <= not rd_fifo_full; --'1', technically
     rd_fifo_rd_en <= not rd_fifo_empty;
     rdata <= rd_out_rdata;
     --big kostyl'
     process(cpu_clk)
     begin
         if cpu_clk'event and cpu_clk = '1' then
-            rd_out_ack_d <= rd_out_ack;
+            if rd_out_ack = '1' then
+                rd_out_mask <= '0';
+            else
+                rd_out_mask <= '1';
+            end if;
         end if;
     end process;
-    ack <= rd_out_ack and not rd_out_ack_d;
+    ack <= rd_out_ack and rd_out_mask;
     --parts
     tagMem_inst: tagMem
         generic map(
@@ -295,8 +325,8 @@ begin
         port map(
             clk => clk,
             reset_n => reset_n,
-            wr => wr_out_wr,
-            rd => wr_out_rd,
+            wr => wr_out_wr_masked,
+            rd => wr_out_rd_masked,
             hit => hit,
             ramAck => ramAck,
             ack => rd_in_ack,

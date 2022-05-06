@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="4508600000fs"></ZoomStartTime>
-      <ZoomEndTime time="4943600001fs"></ZoomEndTime>
-      <Cursor1Time time="4571000000fs"></Cursor1Time>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="3825000001fs"></ZoomEndTime>
+      <Cursor1Time time="1071000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="141"></NameColumnWidth>
-      <ValueColumnWidth column_width="129"></ValueColumnWidth>
+      <ValueColumnWidth column_width="125"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="61" />
+   <WVObjectSize size="62" />
    <wvobject fp_name="/top_cash/cash_inst/cpu_clk" type="logic">
       <obj_property name="ElementShortName">cpu_clk</obj_property>
       <obj_property name="ObjectShortName">cpu_clk</obj_property>
@@ -547,9 +547,13 @@
       <obj_property name="ElementShortName">rd_fifo_dout[32:0]</obj_property>
       <obj_property name="ObjectShortName">rd_fifo_dout[32:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/top_cash/cash_inst/rd_out_ack_d" type="logic">
-      <obj_property name="ElementShortName">rd_out_ack_d</obj_property>
-      <obj_property name="ObjectShortName">rd_out_ack_d</obj_property>
+   <wvobject fp_name="/top_cash/cash_inst/rd_out_mask" type="logic">
+      <obj_property name="ElementShortName">rd_out_mask</obj_property>
+      <obj_property name="ObjectShortName">rd_out_mask</obj_property>
+   </wvobject>
+   <wvobject fp_name="/top_cash/cash_inst/rd_fifo_dout[0]" type="logic">
+      <obj_property name="ElementShortName">[0]</obj_property>
+      <obj_property name="ObjectShortName">[0]</obj_property>
    </wvobject>
    <wvobject fp_name="/top_cash/cash_inst/hit" type="logic">
       <obj_property name="ElementShortName">hit</obj_property>

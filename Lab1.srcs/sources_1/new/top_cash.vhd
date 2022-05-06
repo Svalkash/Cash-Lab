@@ -144,9 +144,9 @@ begin
     drive_cpu_clk: process
     begin
         cpu_clk <= '0';
-        wait for 2 ns;
+        wait for 17 ns;
         cpu_clk <= '1';
-        wait for 2 ns;
+        wait for 17 ns;
     end process;
 
     drive_clk: process
@@ -160,9 +160,9 @@ begin
     drive_ram_clk: process
     begin
         ram_clk <= '0';
-        wait for 17 ns;
+        wait for 2 ns;
         ram_clk <= '1';
-        wait for 17 ns;
+        wait for 2 ns;
     end process;
         
     test: process
@@ -199,7 +199,7 @@ begin
         variable time_total : time := 0ps;
         constant nops_load : integer := 2048;
         constant nops_test : integer := 1024;
-        constant test_mode : integer := 1; -- 0 - test, 1 - cash size, 2 - 2*cash, 3 - 4*cash, 4 - full RAM
+        constant test_mode : integer := 0; -- 0 - test, 1 - cash size, 2 - 2*cash, 3 - 4*cash, 4 - full RAM
     begin
         wait for 20 ns;
         report("unreset");
@@ -210,7 +210,7 @@ begin
         rd <= '0';
         addr <= (others => 'U');
         wdata <= (others => 'U');
-        wait for 20 ns;
+        wait for 500 ns;
         wait on cpu_clk until cpu_clk = '1';
         for i in 1 to (nops_load + nops_test) loop
             --select operation
